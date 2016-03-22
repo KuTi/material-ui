@@ -10,14 +10,17 @@ function getStyles(props, state) {
   return {
     root: {
       left: props.left,
-      width: props.width,
+      right: props.right,
+      // width: props.width,
       bottom: 0,
       display: 'block',
       backgroundColor: props.color || inkBar.backgroundColor,
       height: 2,
       marginTop: -2,
-      position: 'relative',
-      transition: Transitions.easeOut('1s', 'left'),
+      position: 'absolute',
+      transition: `left ${props.moveBarLeft ? '0.125' : '0.25'}s cubic-bezier(.35,0,.25,1),
+                   right ${props.moveBarLeft ? '0.25' : '0.125'}s cubic-bezier(.35,0,.25,1)`,
+      //transition: Transitions.easeOut('1s', 'left'),
     },
   };
 }
@@ -26,13 +29,15 @@ const InkBar = React.createClass({
 
   propTypes: {
     color: React.PropTypes.string,
-    left: React.PropTypes.string.isRequired,
+    left: React.PropTypes.number.isRequired,
+    moveBarLeft: React.PropTypes.bool.isRequired,
+    right: React.PropTypes.number.isRequired,
 
     /**
      * Override the inline-styles of the root element.
      */
     style: React.PropTypes.object,
-    width: React.PropTypes.string.isRequired,
+    // width: React.PropTypes.string.isRequired,
   },
 
   contextTypes: {
@@ -73,9 +78,9 @@ const InkBar = React.createClass({
     const styles = getStyles(this.props, this.state);
 
     return (
-      <div style={prepareStyles(Object.assign(styles.root, style))} />
+      <div style={prepareStyles(Object.assign(styles.root, style))}/>
     );
-  },
+  }
 
 });
 

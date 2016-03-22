@@ -1,5 +1,8 @@
 import React from 'react';
 import getMuiTheme from '../styles/getMuiTheme';
+import ColorManipulator from '../utils/color-manipulator';
+
+
 import EnhancedButton from '../enhanced-button';
 
 function getStyles(props, state) {
@@ -9,13 +12,21 @@ function getStyles(props, state) {
 
   return {
     root: {
-      padding: '0px 12px',
+      display: 'table-cell',
+      cursor: 'pointer',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      paddingTop: (props.icon && !props.label) ? 4 : 0,
       height: (props.label && props.icon) ? 72 : 48,
       color: props.selected ? tabs.selectedTextColor : tabs.textColor,
-      fontWeight: 500,
+      outline: 'none',
       fontSize: 14,
-      width: props.width,
-      textTransform: 'uppercase',
+      fontWeight: 500,
+      whiteSpace: 'nowrap',
+      boxSizing: 'border-box',
+      width: props.width || 'auto',
+      paddingLeft: 12,
+      paddingRight: 12
     },
   };
 }
@@ -47,11 +58,13 @@ const Tab = React.createClass({
     onActive: React.PropTypes.func,
 
     /**
+     * @ignore
      * This property is overriden by the Tabs component.
      */
     onTouchTap: React.PropTypes.func,
 
     /**
+     * @ignore
      * Defines if the current tab is selected or not.
      * The Tabs component is responsible for setting this property.
      */
@@ -68,10 +81,17 @@ const Tab = React.createClass({
      */
     value: React.PropTypes.any,
 
+
     /**
+     * Index of tab
+     */
+    tabIndex: React.PropTypes.number,
+
+    /**
+     * @ignore
      * This property is overriden by the Tabs component.
      */
-    width: React.PropTypes.string,
+    width: React.PropTypes.number,
   },
 
   contextTypes: {
@@ -113,13 +133,18 @@ const Tab = React.createClass({
       onTouchTap,
       selected,
       style,
+      tabIndex,
       value,
       width,
       icon,
       ...other,
     } = this.props;
-
+    
     const styles = getStyles(this.props, this.state);
+    // const colorStyleMerge = this.mergeStyles(styles, style && style.color ? {
+    //       color: selected ? style.color : ColorManipulator.fade(style.color, 0.6)
+    //   } : {});
+
 
     let iconElement;
     if (icon && React.isValidElement(icon)) {
@@ -144,7 +169,7 @@ const Tab = React.createClass({
     return (
       <EnhancedButton
         {...other}
-        style={styles.root}
+        style={Object.assign(styles.root, style)}
         focusRippleColor={rippleColor}
         touchRippleColor={rippleColor}
         focusRippleOpacity={rippleOpacity}
