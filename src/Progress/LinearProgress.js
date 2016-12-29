@@ -26,14 +26,13 @@ export const styleSheet = createStyleSheet('LinearProgress', (theme) => {
       left: 0,
       bottom: 0,
       top: 0,
-      height: 5,
       transition: 'transform 0.2s linear',
       backgroundColor: palette.primary[500],
     },
     dashed: {
       position: 'absolute',
       marginTop: 0,
-      height: 5,
+      height: '100%',
       width: '100%',
       background:
         `radial-gradient(${palette.primary[100]} 0%, ${palette.primary[100]} 16%, transparent 42%)`,
@@ -182,10 +181,7 @@ export default class LinearProgress extends Component {
     }
 
     return (
-      <div
-        className={rootClasses}
-        {...other}
-      >
+      <div className={rootClasses} {...other}>
         <div className={dashedClasses} />
         <div className={bar1Classes} style={styles.bar1} />
         <div className={bar2Classes} style={styles.bar2} />

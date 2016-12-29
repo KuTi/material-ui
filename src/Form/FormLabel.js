@@ -24,12 +24,30 @@ export default function FormLabel(props, context) {
   const {
     children,
     className: classNameProp,
-    error,
-    focused,
-    required,
+    error: errorProp,
+    focused: focusedProp,
+    required: requiredProp,
     ...other
   } = props;
-  const classes = context.styleManager.render(styleSheet);
+
+  const { muiFormControl, styleManager } = context;
+  const classes = styleManager.render(styleSheet);
+
+  let required = requiredProp;
+  let focused = focusedProp;
+  let error = errorProp;
+
+  if (muiFormControl) {
+    if (typeof required === 'undefined') {
+      required = muiFormControl.required;
+    }
+    if (typeof focused === 'undefined') {
+      focused = muiFormControl.focused;
+    }
+    if (typeof error === 'undefined') {
+      error = muiFormControl.error;
+    }
+  }
 
   const className = classNames(classes.root, {
     [classes.focused]: focused,
@@ -54,7 +72,7 @@ export default function FormLabel(props, context) {
 
 FormLabel.propTypes = {
   /**
-   * The contents of the `FormLabel`.
+   * The content of the component.
    */
   children: PropTypes.node,
   /**
@@ -76,14 +94,7 @@ FormLabel.propTypes = {
   required: PropTypes.bool,
 };
 
-FormLabel.defaultProps = {
-  focused: false,
-  required: false,
-  error: false,
-};
-
 FormLabel.contextTypes = {
+  muiFormControl: PropTypes.object,
   styleManager: PropTypes.object.isRequired,
 };
-
-FormLabel.muiName = 'FormLabel';

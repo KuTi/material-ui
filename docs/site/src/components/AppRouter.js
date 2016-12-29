@@ -1,7 +1,8 @@
 // @flow weak
 
-import { hashHistory, Router, Route, IndexRoute, IndexRedirect } from 'react-router';
 import React from 'react';
+import { applyRouterMiddleware, hashHistory, Router, Route, IndexRoute, IndexRedirect } from 'react-router';
+import { useScroll } from 'react-router-scroll';
 import { kebabCase, titleize } from 'docs/site/src/utils/helpers';
 import AppFrame from './AppFrame';
 import AppContent from './AppContent';
@@ -39,9 +40,12 @@ const demos = requireDemos
     return res;
   }, []);
 
-export default function AppRouter(props) {
+export default function AppRouter() {
   return (
-    <Router history={hashHistory} {...props}>
+    <Router
+      history={hashHistory}
+      render={applyRouterMiddleware(useScroll())}
+    >
       <Route title="Material UI" path="/" component={AppFrame}>
         <IndexRoute dockDrawer component={Home} title={null} />
         <Route
@@ -102,9 +106,30 @@ export default function AppRouter(props) {
           component={AppContent}
         >
           <Route
+            title="Icons"
+            path="/style/icons"
+            content={requireDocs('./site/src/pages/style/icons/icons.md')}
+            component={MarkdownDocs}
+            nav
+          />
+          <Route
             title="Typography"
             path="/style/typography"
             content={requireDocs('./site/src/pages/style/typography/typography.md')}
+            component={MarkdownDocs}
+            nav
+          />
+        </Route>
+        <Route
+          title="Layout"
+          path="/layout"
+          nav
+          component={AppContent}
+        >
+          <Route
+            title="Responsive UI"
+            path="/layout/responsive-ui"
+            content={requireDocs('./site/src/pages/layout/responsive-ui/responsive-ui.md')}
             component={MarkdownDocs}
             nav
           />
