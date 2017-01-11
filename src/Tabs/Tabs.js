@@ -1,253 +1,163 @@
-import React, {Component,
-  createElement,
-  cloneElement,
-  Children,
-  isValidElement,
-  PropTypes,
-} from 'react';
-import warning from 'warning';
-import TabTemplate from './TabTemplate';
-import InkBar from './InkBar';
+// @flow weak
 
-function getStyles(props, context) {
-  const {tabs} = context.muiTheme;
+import React, { Component, PropTypes, Children, cloneElement } from 'react';
+import { createStyleSheet } from 'jss-theme-reactor';
+import classNames from 'classnames';
+import EventListener from 'react-event-listener';
+import { throttle } from '../utils/helpers';
+import TabIndicator from './TabIndicator';
 
+export const styleSheet = createStyleSheet('Tabs', () => {
   return {
-    tabItemContainer: {
-      width: '100%',
-      backgroundColor: tabs.backgroundColor,
-      whiteSpace: 'nowrap',
+    root: {
+      position: 'relative', // For the TabIndicator.
       display: 'flex',
+      justifyContent: 'flex-start',
+    },
+    centered: {
+      justifyContent: 'center',
     },
   };
-}
+});
 
-class Tabs extends Component {
+export default class Tabs extends Component {
   static propTypes = {
     /**
-     * Should be used to pass `Tab` components.
+     * If `true`, the tabs will be centered.
+     * This property is intended for large views.
+     */
+    centered: PropTypes.bool,
+    /**
+     * The content of the `Tabs`.
      */
     children: PropTypes.node,
     /**
-     * The css class name of the root element.
+     * The CSS class name of the root element.
      */
     className: PropTypes.string,
     /**
-     * The css class name of the content's container.
+     * If `true`, the tabs will grow to use all the available space.
+     * This property is intended for small views.
      */
-    contentContainerClassName: PropTypes.string,
+    fullWidth: PropTypes.bool,
     /**
-     * Override the inline-styles of the content's container.
+     * The index of the currently selected `BottomNavigation`.
      */
-    contentContainerStyle: PropTypes.object,
+    index: PropTypes.number,
     /**
-     * Specify initial visible tab index.
-     * If `initialSelectedIndex` is set but larger than the total amount of specified tabs,
-     * `initialSelectedIndex` will revert back to default.
-     * If `initialSlectedIndex` is set to any negative value, no tab will be selected intially.
+     * The CSS class name of the indicator element.
      */
-    initialSelectedIndex: PropTypes.number,
+    indicatorClassName: PropTypes.string,
     /**
-     * Override the inline-styles of the InkBar.
+     * Determines the color of the indicator.
      */
-    inkBarStyle: PropTypes.object,
+    indicatorColor: PropTypes.oneOfType([
+      PropTypes.oneOf([
+        'accent',
+      ]),
+      PropTypes.string,
+    ]),
     /**
-     * Called when the selected value change.
+     * Function called when the index change.
      */
     onChange: PropTypes.func,
     /**
-     * Override the inline-styles of the root element.
+     * Determines the color of the `Tab`.
      */
-    style: PropTypes.object,
-    /**
-     * Override the inline-styles of the tab-labels container.
-     */
-    tabItemContainerStyle: PropTypes.object,
-    /**
-     * Override the default tab template used to wrap the content of each tab element.
-     */
-    tabTemplate: PropTypes.func,
-    /**
-     * Override the inline-styles of the tab template.
-     */
-    tabTemplateStyle: PropTypes.object,
-    /**
-     * Makes Tabs controllable and selects the tab whose value prop matches this prop.
-     */
-    value: PropTypes.any,
+    textColor: PropTypes.oneOfType([
+      PropTypes.oneOf([
+        'accent',
+        'inherit',
+      ]),
+      PropTypes.string,
+    ]),
   };
 
   static defaultProps = {
-    initialSelectedIndex: 0,
-    onChange: () => {},
+    centered: false,
+    fullWidth: false,
+    indicatorColor: 'accent',
+    textColor: 'inherit',
   };
 
   static contextTypes = {
-    muiTheme: PropTypes.object.isRequired,
+    styleManager: PropTypes.object.isRequired,
   };
 
-  state = {selectedIndex: 0};
+  state = {
+    indicatorStyle: {},
+  };
 
-  componentWillMount() {
-    const valueLink = this.getValueLink(this.props);
-    const initialIndex = this.props.initialSelectedIndex;
+  componentDidMount() {
+    this.updateIndicator(this.props);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.updateIndicator(nextProps);
+  }
+
+  tabs = undefined;
+
+  handleResize = throttle(() => {
+    this.updateIndicator(this.props);
+  }, 100);
+
+  updateIndicator(props) {
+    const tabsBox = this.tabs.getBoundingClientRect();
+    const tabBox = this.tabs.children[props.index].getBoundingClientRect();
 
     this.setState({
-      selectedIndex: valueLink.value !== undefined ?
-        this.getSelectedIndex(this.props) :
-        initialIndex < this.getTabCount() ?
-        initialIndex :
-        0,
+      indicatorStyle: {
+        left: tabBox.left - tabsBox.left,
+        width: tabBox.width, // May be wrong until the font is loaded.
+      },
     });
-  }
-
-  componentWillReceiveProps(newProps, nextContext) {
-    const valueLink = this.getValueLink(newProps);
-    const newState = {
-      muiTheme: nextContext.muiTheme || this.context.muiTheme,
-    };
-
-    if (valueLink.value !== undefined) {
-      newState.selectedIndex = this.getSelectedIndex(newProps);
-    }
-
-    this.setState(newState);
-  }
-
-  getTabs(props = this.props) {
-    const tabs = [];
-
-    Children.forEach(props.children, (tab) => {
-      if (isValidElement(tab)) {
-        tabs.push(tab);
-      }
-    });
-
-    return tabs;
-  }
-
-  getTabCount() {
-    return this.getTabs().length;
-  }
-
-  // Do not use outside of this component, it will be removed once valueLink is deprecated
-  getValueLink(props) {
-    return props.valueLink || {
-      value: props.value,
-      requestChange: props.onChange,
-    };
-  }
-
-  getSelectedIndex(props) {
-    const valueLink = this.getValueLink(props);
-    let selectedIndex = -1;
-
-    this.getTabs(props).forEach((tab, index) => {
-      if (valueLink.value === tab.props.value) {
-        selectedIndex = index;
-      }
-    });
-
-    return selectedIndex;
-  }
-
-  handleTabTouchTap = (value, event, tab) => {
-    const valueLink = this.getValueLink(this.props);
-    const index = tab.props.index;
-
-    if ((valueLink.value && valueLink.value !== value) ||
-      this.state.selectedIndex !== index) {
-      valueLink.requestChange(value, event, tab);
-    }
-
-    this.setState({selectedIndex: index});
-
-    if (tab.props.onActive) {
-      tab.props.onActive(tab);
-    }
-  };
-
-  getSelected(tab, index) {
-    const valueLink = this.getValueLink(this.props);
-    return valueLink.value ? valueLink.value === tab.props.value :
-      this.state.selectedIndex === index;
   }
 
   render() {
     const {
-      contentContainerClassName,
-      contentContainerStyle,
-      initialSelectedIndex, // eslint-disable-line no-unused-vars
-      inkBarStyle,
-      onChange, // eslint-disable-line no-unused-vars
-      style,
-      tabItemContainerStyle,
-      tabTemplate,
-      tabTemplateStyle,
+      centered,
+      children: childrenProp,
+      className: classNameProp,
+      fullWidth,
+      index,
+      indicatorClassName,
+      indicatorColor,
+      onChange,
+      textColor,
       ...other
     } = this.props;
+    const classes = this.context.styleManager.render(styleSheet);
+    const className = classNames(classes.root, {
+      [classes.centered]: centered,
+    }, classNameProp);
 
-    const {prepareStyles} = this.context.muiTheme;
-    const styles = getStyles(this.props, this.context);
-    const valueLink = this.getValueLink(this.props);
-    const tabValue = valueLink.value;
-    const tabContent = [];
-    const width = 100 / this.getTabCount();
-
-    const tabs = this.getTabs().map((tab, index) => {
-      warning(tab.type && tab.type.muiName === 'Tab',
-        `Material-UI: Tabs only accepts Tab Components as children.
-        Found ${tab.type.muiName || tab.type} as child number ${index + 1} of Tabs`);
-
-      warning(!tabValue || tab.props.value !== undefined,
-        `Material-UI: Tabs value prop has been passed, but Tab ${index}
-        does not have a value prop. Needs value if Tabs is going
-        to be a controlled component.`);
-
-      tabContent.push(tab.props.children ?
-        createElement(tabTemplate || TabTemplate, {
-          key: index,
-          selected: this.getSelected(tab, index),
-          style: tabTemplateStyle,
-        }, tab.props.children) : undefined);
-
+    const children = Children.map(childrenProp, (tab, childIndex) => {
       return cloneElement(tab, {
-        key: index,
-        index: index,
-        selected: this.getSelected(tab, index),
-        width: `${width}%`,
-        onTouchTap: this.handleTabTouchTap,
+        fullWidth,
+        selected: childIndex === index,
+        index: childIndex,
+        onChange,
+        textColor,
       });
     });
 
-    const inkBar = this.state.selectedIndex !== -1 ? (
-      <InkBar
-        left={`${width * this.state.selectedIndex}%`}
-        width={`${width}%`}
-        style={inkBarStyle}
-      />
-    ) : null;
-
-    const inkBarContainerWidth = tabItemContainerStyle ?
-      tabItemContainerStyle.width : '100%';
-
     return (
-      <div style={prepareStyles(Object.assign({}, style))} {...other}>
-        <div style={prepareStyles(Object.assign(styles.tabItemContainer, tabItemContainerStyle))}>
-          {tabs}
-        </div>
-        <div style={{width: inkBarContainerWidth}}>
-          {inkBar}
-        </div>
+      <EventListener target="window" onResize={this.handleResize}>
         <div
-          style={prepareStyles(Object.assign({}, contentContainerStyle))}
-          className={contentContainerClassName}
+          className={className}
+          ref={(c) => { this.tabs = c; }}
+          role="tablist"
+          {...other}
         >
-          {tabContent}
+          {children}
+          <TabIndicator
+            style={this.state.indicatorStyle}
+            className={indicatorClassName}
+            indicatorColor={indicatorColor}
+          />
         </div>
-      </div>
+      </EventListener>
     );
   }
 }
-
-export default Tabs;

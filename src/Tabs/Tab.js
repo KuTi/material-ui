@@ -1,149 +1,190 @@
-import React, {Component, PropTypes} from 'react';
-import EnhancedButton from '../internal/EnhancedButton';
+// @flow weak
 
-function getStyles(props, context) {
-  const {tabs} = context.muiTheme;
+import React, { Component, PropTypes, isValidElement } from 'react';
+import { createStyleSheet } from 'jss-theme-reactor';
+import classNames from 'classnames';
+import ButtonBase from '../internal/ButtonBase';
 
+export const styleSheet = createStyleSheet('Tab', (theme) => {
   return {
     root: {
-      color: props.selected ? tabs.selectedTextColor : tabs.textColor,
-      fontWeight: 500,
-      fontSize: 14,
-      width: props.width,
-      textTransform: 'uppercase',
+      ...theme.typography.button,
+      maxWidth: 264,
+      minWidth: 72,
+      [theme.breakpoints.up('md')]: {
+        minWidth: 160,
+      },
+      background: 'none',
       padding: 0,
+      minHeight: 48,
     },
-    button: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: (props.label && props.icon) ? 72 : 48,
+    rootLabelIcon: {
+      minHeight: 72,
+    },
+    rootAccent: {
+      color: theme.palette.text.secondary,
+    },
+    rootAccentSelected: {
+      color: theme.palette.accent[500],
+    },
+    rootInherit: {
+      color: 'inherit',
+      opacity: 0.7,
+    },
+    rootInheritSelected: {
+      opacity: 1,
+    },
+    label: {
+      fontSize: theme.typography.fontSize,
+      fontWeight: theme.typography.fontWeightMedium,
+      fontFamily: theme.typography.fontFamily,
+      textTransform: 'uppercase',
+      paddingLeft: 12,
+      paddingRight: 12,
+      paddingTop: 6,
+      paddingBottom: 6,
+      display: 'block',
+      [theme.breakpoints.up('sm')]: {
+        paddingLeft: 24,
+        paddingRight: 24,
+        fontSize: theme.typography.fontSize - 1,
+      },
     },
   };
-}
+});
 
-class Tab extends Component {
-  static muiName = 'Tab';
-
+export default class Tab extends Component {
   static propTypes = {
     /**
-     * Override the inline-styles of the button element.
-     */
-    buttonStyle: PropTypes.object,
-    /**
-     * The css class name of the root element.
+     * The CSS class name of the root element.
      */
     className: PropTypes.string,
     /**
-     * Sets the icon of the tab, you can pass `FontIcon` or `SvgIcon` elements.
+     * @ignore
+     */
+    fullWidth: PropTypes.bool,
+    /**
+     * The icon element. If a string is passed, it will be used as a material icon font ligature.
      */
     icon: PropTypes.node,
     /**
      * @ignore
      */
-    index: PropTypes.any,
+    index: PropTypes.number,
     /**
-     * Sets the text value of the tab item to the string specified.
+     * The label element.
      */
     label: PropTypes.node,
     /**
-     * Fired when the active tab changes by touch or tap.
-     * Use this event to specify any functionality when an active tab changes.
-     * For example - we are using this to route to home when the third tab becomes active.
-     * This function will always recieve the active tab as it\'s first argument.
+     * @ignore
      */
-    onActive: PropTypes.func,
+    onChange: PropTypes.func,
     /**
      * @ignore
-     * This property is overriden by the Tabs component.
      */
-    onTouchTap: PropTypes.func,
+    onClick: PropTypes.func,
     /**
      * @ignore
-     * Defines if the current tab is selected or not.
-     * The Tabs component is responsible for setting this property.
      */
     selected: PropTypes.bool,
     /**
-     * Override the inline-styles of the root element.
+     * @ignore
      */
     style: PropTypes.object,
     /**
-     * If value prop passed to Tabs component, this value prop is also required.
-     * It assigns a value to the tab so that it can be selected by the Tabs.
-     */
-    value: PropTypes.any,
-    /**
      * @ignore
-     * This property is overriden by the Tabs component.
      */
-    width: PropTypes.string,
+    textColor: PropTypes.oneOfType([
+      PropTypes.oneOf([
+        'accent',
+        'inherit',
+      ]),
+      PropTypes.string,
+    ]),
   };
 
   static contextTypes = {
-    muiTheme: PropTypes.object.isRequired,
+    styleManager: PropTypes.object.isRequired,
   };
 
-  handleTouchTap = (event) => {
-    if (this.props.onTouchTap) {
-      this.props.onTouchTap(this.props.value, event, this);
+  handleChange = (event) => {
+    const { onChange, index, onClick } = this.props;
+
+    onChange(event, index);
+
+    if (onClick) {
+      onClick(event);
     }
   };
 
   render() {
     const {
-      icon,
+      className: classNameProp,
+      fullWidth,
+      icon: iconProp,
       index, // eslint-disable-line no-unused-vars
-      onActive, // eslint-disable-line no-unused-vars
-      onTouchTap, // eslint-disable-line no-unused-vars
-      selected, // eslint-disable-line no-unused-vars
-      label,
-      buttonStyle,
-      style,
-      value, // eslint-disable-line no-unused-vars
-      width, // eslint-disable-line no-unused-vars
+      label: labelProp,
+      onChange, // eslint-disable-line no-unused-vars
+      selected,
+      style: styleProp,
+      textColor,
       ...other
     } = this.props;
 
-    const styles = getStyles(this.props, this.context);
+    const classes = this.context.styleManager.render(styleSheet);
 
-    let iconElement;
-    if (icon && React.isValidElement(icon)) {
-      const iconProps = {
-        style: {
-          fontSize: 24,
-          color: styles.root.color,
-          marginBottom: label ? 5 : 0,
-        },
-      };
-      // If it's svg icon set color via props
-      if (icon.type.muiName !== 'FontIcon') {
-        iconProps.color = styles.root.color;
-      }
-      iconElement = React.cloneElement(icon, iconProps);
+    let icon;
+
+    if (iconProp !== undefined) {
+      icon = isValidElement(iconProp) ? iconProp : <span className="material-icons">{iconProp}</span>;
     }
 
-    const rippleOpacity = 0.3;
-    const rippleColor = this.context.muiTheme.tabs.selectedTextColor;
+    let label;
+
+    if (labelProp !== undefined) {
+      label = (
+        <span className={classes.label}>
+          {labelProp}
+        </span>
+      );
+    }
+
+    const className = classNames(classes.root, {
+      [classes.rootAccent]: textColor === 'accent',
+      [classes.rootAccentSelected]: selected && textColor === 'accent',
+      [classes.rootInherit]: textColor === 'inherit',
+      [classes.rootInheritSelected]: selected && textColor === 'inherit',
+      [classes.rootLabelIcon]: icon && label,
+    }, classNameProp);
+
+    let style = {};
+
+    if (fullWidth) {
+      style.width = '100%';
+    }
+
+    if (textColor !== 'accent' && textColor !== 'inherit') {
+      style.color = textColor;
+    }
+
+    style = Object.keys(style).length > 0 ? {
+      ...style,
+      ...styleProp,
+    } : styleProp;
 
     return (
-      <EnhancedButton
+      <ButtonBase
+        focusRipple
+        className={className}
+        style={style}
+        role="tab"
+        aria-selected={selected}
         {...other}
-        style={Object.assign(styles.root, style)}
-        focusRippleColor={rippleColor}
-        touchRippleColor={rippleColor}
-        focusRippleOpacity={rippleOpacity}
-        touchRippleOpacity={rippleOpacity}
-        onTouchTap={this.handleTouchTap}
+        onClick={this.handleChange}
       >
-        <div style={Object.assign(styles.button, buttonStyle)} >
-          {iconElement}
-          {label}
-        </div>
-      </EnhancedButton>
+        {icon}
+        {label}
+      </ButtonBase>
     );
   }
 }
-
-export default Tab;

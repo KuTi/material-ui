@@ -1,57 +1,74 @@
+// @flow weak
 /* eslint-env mocha */
+
 import React from 'react';
-import {shallow} from 'enzyme';
-import {assert} from 'chai';
-import Tabs from './Tabs';
-import getMuiTheme from '../styles/getMuiTheme';
+import { assert } from 'chai';
+import { spy } from 'sinon';
+import { createShallowWithContext, createMountWithContext } from 'test/utils';
+import Tabs, { styleSheet } from './Tabs';
+import Tab from './Tab';
 
 describe('<Tabs />', () => {
-  const muiTheme = getMuiTheme();
-  const shallowWithContext = (node) => shallow(node, {context: {muiTheme}});
-  const Tab = () => <div />;
-  Tab.muiName = 'Tab';
+  let shallow;
+  let mount;
+  let classes;
 
-  describe('uncontrolled', () => {
-    it('should set the right tab active', () => {
-      const wrapper = shallowWithContext(
-        <Tabs>
+  before(() => {
+    shallow = createShallowWithContext();
+    classes = shallow.context.styleManager.render(styleSheet);
+    mount = createMountWithContext();
+  });
+
+  it('should render with the root class', () => {
+    const wrapper = shallow(
+      <Tabs>
+        <Tab />
+      </Tabs>,
+    );
+    const wrapperDiv = wrapper.childAt(0);
+    assert.strictEqual(wrapperDiv.is('div'), true, 'should be a div');
+    assert.strictEqual(wrapperDiv.hasClass(classes.root), true, 'should have the root class');
+  });
+
+  describe('prop: className', () => {
+    it('should render with the user and root classes', () => {
+      const wrapper = shallow(
+        <Tabs className="woof">
           <Tab />
-          <Tab />
-        </Tabs>
+        </Tabs>,
       );
-
-      assert.strictEqual(wrapper.state().selectedIndex, 0);
+      const wrapperDiv = wrapper.childAt(0);
+      assert.strictEqual(wrapperDiv.hasClass('woof'), true, 'should have the "woof" class');
+      assert.strictEqual(wrapperDiv.hasClass(classes.root), true, 'should have the root class');
     });
   });
 
-  describe('prop: value', () => {
-    it('should set the right tab active', () => {
-      const wrapper = shallowWithContext(
-        <Tabs value="2">
-          <Tab value="1" />
-          <Tab value="2" />
-        </Tabs>
+  describe('prop: index', () => {
+    it('should pass selected prop to children', () => {
+      const wrapper = shallow(
+        <Tabs index={1}>
+          <Tab />
+          <Tab />
+        </Tabs>,
       );
-
-      assert.strictEqual(wrapper.state().selectedIndex, 1);
+      const wrapperDiv = wrapper.childAt(0);
+      assert.strictEqual(wrapperDiv.childAt(0).props().selected, false, 'should have selected to false');
+      assert.strictEqual(wrapperDiv.childAt(1).props().selected, true, 'should have selected');
     });
+  });
 
-    it('should set the right tab active when the children change', () => {
-      const wrapper = shallowWithContext(
-        <Tabs value="2">
-          <Tab value="1" />
-          <Tab value="2" />
-        </Tabs>
+  describe('prop: onChange', () => {
+    it('should pass selected prop to children', () => {
+      const handleChange = spy();
+      const wrapper = mount(
+        <Tabs index={0} onChange={handleChange}>
+          <Tab />
+          <Tab />
+        </Tabs>,
       );
-
-      wrapper.setProps({
-        children: [
-          <Tab value="2" />,
-          <Tab value="3" />,
-        ],
-      });
-
-      assert.strictEqual(wrapper.state().selectedIndex, 0);
+      wrapper.find(Tab).at(1).simulate('click');
+      assert.strictEqual(handleChange.callCount, 1, 'should have been called once');
+      assert.strictEqual(handleChange.args[0][1], 1, 'should have been called with index 1');
     });
   });
 });
