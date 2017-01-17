@@ -25,22 +25,16 @@ const styleSheet = createStyleSheet('InteractiveLayout', () => {
   };
 });
 
-const CELLS = [
-  {},
-  {},
-  {},
-];
-
 export default class InteractiveLayout extends Component {
   static contextTypes = {
     styleManager: PropTypes.object.isRequired,
   }
 
   state = {
-    xsDirection: 'row',
-    xsJustify: 'center',
-    xsAlign: 'center',
-    xsGutter: '16',
+    direction: 'row',
+    justify: 'center',
+    align: 'center',
+    gutter: '16',
   }
 
   handleChange = (key) => (event, value) => {
@@ -52,9 +46,9 @@ export default class InteractiveLayout extends Component {
   render() {
     const classes = this.context.styleManager.render(styleSheet);
     const {
-      xsAlign,
-      xsDirection,
-      xsJustify,
+      align,
+      direction,
+      justify,
     } = this.state;
 
     return (
@@ -63,14 +57,14 @@ export default class InteractiveLayout extends Component {
           <Layout
             container
             className={classes.demo}
-            xsAlign={xsAlign}
-            xsDirection={xsDirection}
-            xsJustify={xsJustify}
+            align={align}
+            direction={direction}
+            justify={justify}
           >
-            {CELLS.map((cell, i) => (
-              <Layout key={i} item>
+            {Array.from({ length: 3 }, (v, k) => k).map((index) => (
+              <Layout key={index} item>
                 <Paper className={classes.paper}>
-                  {`Cell ${i + 1}`}
+                  {`Cell ${index + 1}`}
                 </Paper>
               </Layout>
             ))}
@@ -80,11 +74,11 @@ export default class InteractiveLayout extends Component {
           <Paper className={classes.control}>
             <Layout container>
               <Layout item xs={6} sm={4}>
-                <FormLabel>xsDirection</FormLabel>
+                <FormLabel>direction</FormLabel>
                 <RadioGroup
-                  aria-label="xsDirection"
-                  selectedValue={xsDirection}
-                  onChange={this.handleChange('xsDirection')}
+                  aria-label="direction"
+                  selectedValue={direction}
+                  onChange={this.handleChange('direction')}
                 >
                   <LabelRadio label="row" value="row" />
                   <LabelRadio label="row-reverse" value="row-reverse" />
@@ -93,11 +87,11 @@ export default class InteractiveLayout extends Component {
                 </RadioGroup>
               </Layout>
               <Layout item xs={6} sm={4}>
-                <FormLabel>xsJustify</FormLabel>
+                <FormLabel>justify</FormLabel>
                 <RadioGroup
-                  aria-label="xsJustify"
-                  selectedValue={xsJustify}
-                  onChange={this.handleChange('xsJustify')}
+                  aria-label="justify"
+                  selectedValue={justify}
+                  onChange={this.handleChange('justify')}
                 >
                   <LabelRadio label="flex-start" value="flex-start" />
                   <LabelRadio label="center" value="center" />
@@ -107,11 +101,11 @@ export default class InteractiveLayout extends Component {
                 </RadioGroup>
               </Layout>
               <Layout item xs={6} sm={4}>
-                <FormLabel>xsAlign</FormLabel>
+                <FormLabel>align</FormLabel>
                 <RadioGroup
-                  aria-label="xsAlign"
-                  selectedValue={xsAlign}
-                  onChange={this.handleChange('xsAlign')}
+                  aria-label="align"
+                  selectedValue={align}
+                  onChange={this.handleChange('align')}
                 >
                   <LabelRadio label="flex-start" value="flex-start" />
                   <LabelRadio label="center" value="center" />

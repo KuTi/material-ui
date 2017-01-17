@@ -16,8 +16,8 @@ import React, { PropTypes } from 'react';
 import { createStyleSheet } from 'jss-theme-reactor';
 import classNames from 'classnames';
 
-const GUTTERS = [8, 16, 24, 40];
-const GRID_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const GUTTERS = [0, 8, 16, 24, 40];
+const GRID_SIZES = [true, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 function generateGrid(globalStyles, theme, breakpoint) {
   // For the auto layouting
@@ -29,12 +29,17 @@ function generateGrid(globalStyles, theme, breakpoint) {
     },
   };
 
-  GRID_SIZES.forEach((size) => {
+  GRID_SIZES.forEach((size, index) => {
+    if (index === 0) { // Skip the first one as handle above.
+      return;
+    }
+
     // Only keep 6 significant numbers.
     const width = `${Math.round((size / 12) * (10 ** 6)) / (10 ** 4)}%`;
 
     /* eslint-disable max-len */
-    // Close to the bootstrap implementation: https://github.com/twbs/bootstrap/blob/b0508a975d711d6b24c01f57dd5445c22699fac4/scss/mixins/_grid.scss#L69
+    // Close to the bootstrap implementation:
+    // https://github.com/twbs/bootstrap/blob/b0508a975d711d6b24c01f57dd5445c22699fac4/scss/mixins/_grid.scss#L69
     /* eslint-enable max-len */
     styles[`grid-${breakpoint}-${size}`] = {
       flexBasis: width,
@@ -42,13 +47,22 @@ function generateGrid(globalStyles, theme, breakpoint) {
     };
   });
 
-  globalStyles[theme.breakpoints.up(breakpoint)] = styles;
+  // No need for a media query for the first size.
+  if (breakpoint === 'xs') {
+    Object.assign(globalStyles, styles);
+  } else {
+    globalStyles[theme.breakpoints.up(breakpoint)] = styles;
+  }
 }
 
 function generateGutter(theme, breakpoint) {
   const styles = {};
 
-  GUTTERS.forEach((gutter) => {
+  GUTTERS.forEach((gutter, index) => {
+    if (index === 0) { // Skip the default style.
+      return;
+    }
+
     styles[`gutter-${breakpoint}-${gutter}`] = {
       margin: -gutter / 2,
       '& > $typeItem': {
@@ -126,16 +140,16 @@ function Layout(props, context) {
     component: ComponentProp,
     container,
     item,
-    xsAlign,
-    xsDirection,
+    align,
+    direction,
     xs,
     sm,
     md,
     lg,
     xl,
-    xsGutter,
-    xsJustify,
-    xsWrap,
+    gutter,
+    justify,
+    wrap,
     ...other
   } = props;
 
@@ -146,11 +160,11 @@ function Layout(props, context) {
       className={classNames({
         [classes.typeContainer]: container,
         [classes.typeItem]: item,
-        [classes[`gutter-xs-${xsGutter}`]]: container && xsGutter !== false,
-        [classes[`direction-xs-${xsDirection}`]]: xsDirection !== Layout.defaultProps.xsDirection,
-        [classes[`wrap-xs-${xsWrap}`]]: xsWrap !== Layout.defaultProps.xsWrap,
-        [classes[`align-xs-${xsAlign}`]]: xsAlign !== Layout.defaultProps.xsAlign,
-        [classes[`justify-xs-${xsJustify}`]]: xsJustify !== Layout.defaultProps.xsJustify,
+        [classes[`gutter-xs-${gutter}`]]: container && gutter !== 0,
+        [classes[`direction-xs-${direction}`]]: direction !== Layout.defaultProps.direction,
+        [classes[`wrap-xs-${wrap}`]]: wrap !== Layout.defaultProps.wrap,
+        [classes[`align-xs-${align}`]]: align !== Layout.defaultProps.align,
+        [classes[`justify-xs-${justify}`]]: justify !== Layout.defaultProps.justify,
         [classes['grid-xs']]: xs === true,
         [classes[`grid-xs-${xs}`]]: xs && xs !== true,
         [classes['grid-sm']]: sm === true,
@@ -169,10 +183,7 @@ function Layout(props, context) {
   );
 }
 
-const gridPropType = PropTypes.oneOfType([
-  PropTypes.bool,
-  PropTypes.oneOf(GRID_SIZES),
-]);
+const gridPropType = PropTypes.oneOf(GRID_SIZES);
 
 Layout.propTypes = {
   /**
@@ -229,7 +240,7 @@ Layout.propTypes = {
    * Defines the `align-items` style property.
    * It's applied for all the screen sizes.
    */
-  xsAlign: PropTypes.oneOf([
+  align: PropTypes.oneOf([ // eslint-disable-line react/sort-prop-types
     'flex-start',
     'center',
     'flex-end',
@@ -239,7 +250,7 @@ Layout.propTypes = {
    * Defines the `flex-direction` style property.
    * It's applied for all the screen sizes.
    */
-  xsDirection: PropTypes.oneOf([
+  direction: PropTypes.oneOf([ // eslint-disable-line react/sort-prop-types
     'row',
     'row-reverse',
     'column',
@@ -249,15 +260,12 @@ Layout.propTypes = {
    * Defines the space between the type `item` component.
    * It can only be used on a type `container` component.
    */
-  xsGutter: PropTypes.oneOfType([
-    PropTypes.bool,
-    PropTypes.oneOf(GUTTERS),
-  ]),
+  gutter: PropTypes.oneOf(GUTTERS), // eslint-disable-line react/sort-prop-types
   /**
    * Defines the `justify-content` style property.
    * It's applied for all the screen sizes.
    */
-  xsJustify: PropTypes.oneOf([
+  justify: PropTypes.oneOf([ // eslint-disable-line react/sort-prop-types
     'flex-start',
     'center',
     'flex-end',
@@ -268,7 +276,7 @@ Layout.propTypes = {
    * Defines the `flex-wrap` style property.
    * It's applied for all the screen sizes.
    */
-  xsWrap: PropTypes.oneOf([
+  wrap: PropTypes.oneOf([ // eslint-disable-line react/sort-prop-types
     'nowrap',
     'wrap',
     'wrap-reverse',
@@ -279,11 +287,11 @@ Layout.defaultProps = {
   component: 'div',
   container: false,
   item: false,
-  xsAlign: 'flex-start',
-  xsDirection: 'row',
-  xsGutter: 16,
-  xsJustify: 'flex-start',
-  xsWrap: 'wrap',
+  align: 'flex-start',
+  direction: 'row',
+  gutter: 16,
+  justify: 'flex-start',
+  wrap: 'wrap',
 };
 
 Layout.contextTypes = {

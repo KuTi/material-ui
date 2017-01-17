@@ -41,8 +41,8 @@ describe('<Chip />', () => {
       assert.strictEqual(wrapper.prop('data-my-prop'), 'woof');
     });
 
-    it('should not have a tabIndex prop', () => {
-      assert.strictEqual(wrapper.prop('tabIndex'), undefined);
+    it('should have a tabIndex prop with value -1', () => {
+      assert.strictEqual(wrapper.prop('tabIndex'), -1);
     });
   });
 
@@ -75,8 +75,8 @@ describe('<Chip />', () => {
       assert.strictEqual(wrapper.prop('onClick'), handleClick);
     });
 
-    it('should have a tabIndex prop with value 0', () => {
-      assert.strictEqual(wrapper.prop('tabIndex'), 0);
+    it('should not have a tabIndex prop', () => {
+      assert.strictEqual(wrapper.prop('tabIndex'), undefined);
     });
 
     it('should apply user value of tabIndex', () => {
@@ -98,12 +98,11 @@ describe('<Chip />', () => {
     before(() => {
       wrapper = shallow(
         <Chip
-          avatar={<Avatar
-            className="my-Avatar"
-            data-my-prop="woof"
-          >
-            MB
-          </Avatar>}
+          avatar={
+            <Avatar className="my-Avatar" data-my-prop="woof">
+              MB
+            </Avatar>
+          }
           label="Text Avatar Chip"
           onRequestDelete={() => {}}
           className="my-Chip"
@@ -132,8 +131,8 @@ describe('<Chip />', () => {
       assert.strictEqual(wrapper.childAt(0).prop('data-my-prop'), 'woof');
     });
 
-    it('should have a tabIndex prop with value 0', () => {
-      assert.strictEqual(wrapper.prop('tabIndex'), 0);
+    it('should not have a tabIndex prop', () => {
+      assert.strictEqual(wrapper.prop('tabIndex'), undefined);
     });
   });
 });

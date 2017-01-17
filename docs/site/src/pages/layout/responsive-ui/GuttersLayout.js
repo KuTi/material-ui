@@ -22,19 +22,13 @@ const styleSheet = createStyleSheet('GuttersLayout', () => {
   };
 });
 
-const CELLS = [
-  {},
-  {},
-  {},
-];
-
 export default class GuttersLayout extends Component {
   static contextTypes = {
     styleManager: PropTypes.object.isRequired,
   }
 
   state = {
-    xsGutter: '16',
+    gutter: '16',
   }
 
   handleChange = (key) => (event, value) => {
@@ -46,7 +40,7 @@ export default class GuttersLayout extends Component {
   render() {
     const classes = this.context.styleManager.render(styleSheet);
     const {
-      xsGutter,
+      gutter,
     } = this.state;
 
     return (
@@ -55,11 +49,11 @@ export default class GuttersLayout extends Component {
           <Layout
             container
             className={classes.demo}
-            xsJustify="center"
-            xsGutter={xsGutter === 'false' ? false : Number(xsGutter)}
+            justify="center"
+            gutter={Number(gutter)}
           >
-            {CELLS.map((cell, i) => (
-              <Layout key={i} item>
+            {Array.from({ length: 3 }, (v, k) => k).map((index) => (
+              <Layout key={index} item>
                 <Paper className={classes.paper} />
               </Layout>
             ))}
@@ -69,14 +63,14 @@ export default class GuttersLayout extends Component {
           <Paper className={classes.control}>
             <Layout container>
               <Layout item>
-                <FormLabel>xsGutter</FormLabel>
+                <FormLabel>gutter</FormLabel>
                 <RadioGroup
-                  aria-label="xsGutter"
-                  selectedValue={xsGutter}
-                  onChange={this.handleChange('xsGutter')}
+                  aria-label="gutter"
+                  selectedValue={gutter}
+                  onChange={this.handleChange('gutter')}
                   row
                 >
-                  <LabelRadio label="false" value="false" />
+                  <LabelRadio label="0" value="0" />
                   <LabelRadio label="8" value="8" />
                   <LabelRadio label="16" value="16" />
                   <LabelRadio label="24" value="24" />
